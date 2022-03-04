@@ -24,10 +24,12 @@ int validate_range(char **single_target);
 int validate_conflict(char **single_target, TargetList *start);
 int validate_all_criteria(char *ptrName, char *ptrLatitude, char *ptrLongitude, TargetList *start);
 int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude);
+int add_linked_list2(TargetList **start, char *ptrName, double latitude, double longitude);
 void list_print(TargetList *start);
 void list_print2(TargetList *start);
 void targets_print(char **targets, int number_targets);
 int search_target(TargetList *start);
+TargetList* targets_damage_zone(TargetList *start);
 
 
 int print_menue(void) {
@@ -382,6 +384,47 @@ int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *
 
 
 
+int add_linked_list2(TargetList **start, char *ptrName, double latitude, double longitude) {
+
+    // Allocate memory
+    TargetList *newTarget = malloc(sizeof(TargetList));
+
+
+    // If memory could be allocated
+    if (newTarget != NULL) {
+
+        // set parameters
+        newTarget->name = ptrName;
+        newTarget->latitude = latitude;
+        newTarget->longitude = longitude;
+        newTarget->next = NULL;
+
+        // make start of the list
+        if(*start == NULL){
+           *start = newTarget;
+        }
+
+        // append to the list
+        else {
+           TargetList *cur = *start;
+           while(cur->next != NULL){
+               cur = cur->next;
+           }
+           cur->next = newTarget;
+        }
+
+        return 1;
+
+    }
+
+    else {
+        return 0;
+    }
+
+}
+
+
+
 void list_print2(TargetList *start){
 
    TargetList *cur = start;
@@ -491,6 +534,95 @@ int search_target(TargetList *start){
 
 
 
+TargetList* targets_damage_zone(TargetList *start) {
+
+    double latitude = 0;
+    double longitude = 0;
+    double damage_zone = 0;
+
+    printf("Enter the predicted collision point:\n");
+    scanf("%lf %lf", &latitude, &longitude);
+    printf("You entered %lf %lf\n", latitude, longitude);
+    printf("Enter the damage zone´s radius:\n");
+    scanf("%lf", &damage_zone);
+    printf("You entered %lf\n", damage_zone);
+
+    TargetList *targets_damage_zone = NULL;
+
+    if (start != NULL) {
+        double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
+        double length_vector = sqrt(vector);
+        if (length_vector <= damage_zone) {
+            add_linked_list2(&targets_damage_zone, start->name, start->latitude, start->longitude);
+        }
+
+        while (start->next != NULL) {
+            start = start->next;
+            double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
+            double length_vector = sqrt(vector);
+            if (length_vector <= damage_zone) {
+                add_linked_list2(&targets_damage_zone, start->name, start->latitude, start->longitude);
+            }
+        }
+    //printf("\n\n");
+    }
+    return targets_damage_zone;
+
+}
+
+
+
+TargetList* execute_air_strike(TargetList *start) {
+
+    double latitude = 0;
+    double longitude = 0;
+    double damage_zone = 0;
+    int targets_destroyed = 0;
+    TargetList *list_targets_destroyed = NULL;
+
+    printf("Enter the predicted collision point:\n");
+    scanf("%lf %lf", &latitude, &longitude);
+    printf("You entered %lf %lf\n", latitude, longitude);
+    printf("Enter the damage zone´s radius:\n");
+    scanf("%lf", &damage_zone);
+    printf("You entered %lf\n", damage_zone);
+
+    TargetList *targets_damage_zone = NULL;
+
+    if (start != NULL) {
+        double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
+        double length_vector = sqrt(vector);
+        if (length_vector <= damage_zone) {
+            targets_destroyed++;
+            add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
+        }
+
+        while (start->next != NULL) {
+            start = start->next;
+            double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
+            double length_vector = sqrt(vector);
+            if (length_vector <= damage_zone) {
+                targets_destroyed++;
+                add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
+            }
+        }
+    }
+
+    if (targets_destroyed > 0){
+        printf("%d target destroyed\n", targets_destroyed);
+        list_print(list_targets_destroyed);
+    }
+
+    else {
+        printf("No target aimed. Mission cancelled.\n");
+    }
+
+    return targets_damage_zone;
+
+}
+
+
+
 int main(void) {
 
     int option = 0;
@@ -501,6 +633,8 @@ int main(void) {
     char *ptrLatitude = 0;
     char *ptrLongitude = 0;
     TargetList *start = NULL;
+    TargetList *list_targets_damage_zone = NULL;
+    TargetList *list_targets_destroyed = NULL;
 
     // user chooses an option
     while (option != 6) {
@@ -538,6 +672,14 @@ int main(void) {
             case 3:
                 search_target(start);
                 break;
+
+            case 4:
+                list_targets_damage_zone = targets_damage_zone(start);
+                list_print(list_targets_damage_zone);
+                break;
+
+            case 5:
+                list_targets_destroyed = execute_air_strike(start);
 
             case 6:
                 exit(1);
