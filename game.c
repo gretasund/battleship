@@ -16,7 +16,7 @@ typedef struct target_list TargetList;
 
 
 typedef struct char_list CharList;
-int print_menue(void);
+int print_menu(void);
 int load_target_file(char **targets);
 int validate_alphabet(char **single_target);
 int validate_length(char **single_target);
@@ -26,28 +26,29 @@ int validate_all_criteria(char *ptrName, char *ptrLatitude, char *ptrLongitude, 
 int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude);
 int add_linked_list2(TargetList **start, char *ptrName, double latitude, double longitude);
 void list_print(TargetList *start);
-void list_print2(TargetList *start);
 void targets_print(char **targets, int number_targets);
 int search_target(TargetList *start);
 TargetList* targets_damage_zone(TargetList *start);
+void delete_target(TargetList **head_ref, int position);
 
 
-int print_menue(void) {
+int print_menu(void) {
 
     int status, input, buffer;
     status = 0;
 
+    printf("\n");
     printf("1) Load a target file\n");
     printf("2) Show current targets\n");
     printf("3) Search a target\n");
     printf("4) Plan an airstrike\n");
     printf("5) Execute an airstrike\n");
-    printf("6) Quit\n");
+    printf("6) Quit\n\n");
 
     while(status==0){
 
         // get user input
-        printf("Please enter a number: ");
+        printf("Option: ");
         status = scanf("%d", &input);
 
 
@@ -71,10 +72,7 @@ int print_menue(void) {
 
     }
 
-    printf("Option: %d\n", input);
-
     return input;
-
 }
 
 
@@ -88,7 +86,7 @@ int load_target_file(char **targets) {
 
 
     // get user input
-    printf("Enter a target file: \n");
+    printf("Enter a target file: ");
     scanf("%s", file_name);
 
 
@@ -425,20 +423,6 @@ int add_linked_list2(TargetList **start, char *ptrName, double latitude, double 
 
 
 
-void list_print2(TargetList *start){
-
-   TargetList *cur = start;
-   while(cur != NULL){
-       printf("%3s - ", cur->name);
-       printf("%3f - ", cur->latitude);
-       printf("%3f\n", cur->longitude);
-       cur = cur->next;
-   }
-   printf("\n");
-}
-
-
-
 void list_print(TargetList *start){
 
    while(start != NULL){
@@ -495,7 +479,7 @@ void map_print(TargetList *start) {
             map[mapY][mapX] = 'x';
         }
 
-        // print the empty map
+        // print the map
         for (int y=39; y>-1; y--){
             for (int x=0; x<80; x++) {
             printf("%c", map[y][x]);
@@ -511,7 +495,7 @@ int search_target(TargetList *start){
 
     char target[16] = { };
 
-    printf("Enter the name:\n");
+    printf("Enter the name: ");
     scanf("%[^\n]", target);
     //printf("You entered: %s\n", target);
 
@@ -540,12 +524,12 @@ TargetList* targets_damage_zone(TargetList *start) {
     double longitude = 0;
     double damage_zone = 0;
 
-    printf("Enter the predicted collision point:\n");
-    scanf("%lf %lf", &latitude, &longitude);
-    printf("You entered %lf %lf\n", latitude, longitude);
-    printf("Enter the damage zone´s radius:\n");
+    printf("Enter targeted latitude: ");
+    scanf("%lf", &latitude);
+    printf("Enter targeted longitude: ");
+    scanf("%lf", &longitude);
+    printf("Enter radius of damage zone: ");
     scanf("%lf", &damage_zone);
-    printf("You entered %lf\n", damage_zone);
 
     TargetList *targets_damage_zone = NULL;
 
@@ -572,20 +556,22 @@ TargetList* targets_damage_zone(TargetList *start) {
 
 
 
-TargetList* execute_air_strike(TargetList *start) {
+TargetList* execute_air_strike(TargetList **start1) {
 
     double latitude = 0;
     double longitude = 0;
     double damage_zone = 0;
     int targets_destroyed = 0;
+    int index = 0;
     TargetList *list_targets_destroyed = NULL;
+    TargetList *start = *(start1);
 
-    printf("Enter the predicted collision point:\n");
-    scanf("%lf %lf", &latitude, &longitude);
-    printf("You entered %lf %lf\n", latitude, longitude);
-    printf("Enter the damage zone´s radius:\n");
+    printf("Enter targeted latitude: ");
+    scanf("%lf", &latitude);
+    printf("Enter targeted longitude: ");
+    scanf("%lf", &longitude);
+    printf("Enter radius of damage zone: ");
     scanf("%lf", &damage_zone);
-    printf("You entered %lf\n", damage_zone);
 
     TargetList *targets_damage_zone = NULL;
 
@@ -595,15 +581,20 @@ TargetList* execute_air_strike(TargetList *start) {
         if (length_vector <= damage_zone) {
             targets_destroyed++;
             add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
+            delete_target(start1, index);
+            index--;
         }
 
         while (start->next != NULL) {
             start = start->next;
+            index++;
             double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
             double length_vector = sqrt(vector);
             if (length_vector <= damage_zone) {
                 targets_destroyed++;
                 add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
+                delete_target(start1, index);
+                index--;
             }
         }
     }
@@ -623,12 +614,48 @@ TargetList* execute_air_strike(TargetList *start) {
 
 
 
+void delete_target(TargetList **start, int position)
+{
+   // If TargetList is empty
+   if (*start == NULL)
+      return;
+
+   // Store head node
+   TargetList* temp = *start;
+
+    // If head needs to be removed
+    if (position == 0)
+    {
+        *start = temp->next;      // Change head
+        free(temp);               // free old head
+        return;
+    }
+
+    // Find previous node of the node to be deleted
+    for (int i=0; temp!=NULL && i<position-1; i++)
+         temp = temp->next;
+
+    // If position is more than number of ndoes
+    if (temp == NULL || temp->next == NULL)
+         return;
+
+    // Node temp->next is the node to be deleted
+    // Store pointer to the next of node to be deleted
+    TargetList* *next = &temp->next->next;
+
+    // Unlink the node from linked list
+    free(temp->next);  // Free memory
+
+    temp->next = *next;  // Unlink the deleted node from list
+}
+
+
+
 int main(void) {
 
     int option = 0;
-    char *targets[30] = {};
     int number_targets = 0;
-
+    char *targets[30] = {};
     char *ptrName = NULL;
     char *ptrLatitude = 0;
     char *ptrLongitude = 0;
@@ -638,12 +665,14 @@ int main(void) {
 
     // user chooses an option
     while (option != 6) {
-        option = print_menue();
+        option = print_menu();
 
         if (option != 6) {
-        printf("Your choice is %d\n\n", option);
         }
 
+        else {
+            printf("Exit.\n");
+        }
 
         // perform the correct option
         switch (option) {
@@ -659,8 +688,6 @@ int main(void) {
                         add_linked_list(&start, ptrName, ptrLatitude, ptrLongitude);
                     }
                 }
-                //list_print(start);
-                printf("\n");
                 break;
 
             case 2:
@@ -679,7 +706,8 @@ int main(void) {
                 break;
 
             case 5:
-                list_targets_destroyed = execute_air_strike(start);
+                list_targets_destroyed = execute_air_strike(&start);
+                break;
 
             case 6:
                 exit(1);
@@ -691,3 +719,5 @@ int main(void) {
     }
 
 }
+
+
