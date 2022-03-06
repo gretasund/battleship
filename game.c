@@ -20,16 +20,17 @@ void print_menu(void);
 int get_option(void);
 int load_target_file(char **targets, TargetList **start);
 char *dynamicString(void);
-int validate_alphabet(char **single_target);
+int validate_name(char *targetName);
+int validate_coordinate(char *latitude, char *longitude);
 int validate_length(char **single_target);
-int validate_range(char **single_target);
+int validate_range(char *latitude, char *longitude);
 int validate_conflict(char **single_target, TargetList *start);
-int validate_all_criteria(char *ptrName, char *ptrLatitude, char *ptrLongitude, TargetList *start);
 int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude);
 int add_linked_list2(TargetList **start, char *ptrName, double latitude, double longitude);
 void list_print(TargetList *start);
 int search_target(TargetList *start);
 TargetList* targets_damage_zone(TargetList *start);
+TargetList* execute_air_strike(TargetList **start1);
 void delete_target(TargetList **head_ref, int position);
 
 
@@ -61,7 +62,6 @@ int get_option(void) {
         printf("Option: ");
         status = scanf("%2s", option);
         while(getchar() != '\n');
-        //printf("option = %s, length = %d\n", option, strlen(option));
 
         // check the input buffer
         if (strlen(option) == 2) {
@@ -139,14 +139,16 @@ int load_target_file(char **targets, TargetList **start) {
         single_target[1] = targets[i+1];
         single_target[2] = targets[i+2];
 
-        //int a = validate_alphabet(single_target);
-        //int b = validate_length(single_target);
-        //int c = validate_range(single_target);
-        //printf("a = %d b= %d, c = %d\n", a, b, c);
+        /*int a = validate_name(targets[i+0]);
+        int b = validate_coordinate(targets[i+1], targets[i+2]);
+        int c = validate_length(single_target);
+        int d = validate_range(targets[i+1], targets[i+1]);
+        printf("a = %d, b = %d, c = %d, d = %d\n", a, b, c, d);*/
 
-        if(validate_alphabet(single_target) == 0 ||
+        if(validate_name(targets[i+0]) == 0 ||
+           validate_coordinate(targets[i+1], targets[i+2]) == 0 ||
            validate_length(single_target) == 0 ||
-           validate_range(single_target) == 0) {
+           validate_range(targets[i+1], targets[i+1]) == 0) {
             printf("Invalid file.\n");
             return 0;
         }
@@ -205,18 +207,42 @@ char *dynamicString(void){
 
 
 
-int validate_alphabet(char **single_target) {
+int validate_name(char *targetName) {
 
     // declare variables
     int length = 0;
 
-    // validate the name -> single_target[0]
-    while (single_target[0][length] != '\0') {
+    // validate each char of the name
+    while (targetName[length] != '\0') {
         if (
-            (single_target[0][length] >47 && single_target[0][length] <58)    ||    //0-9 = 48-57
-            (single_target[0][length] >64 && single_target[0][length] <91)    ||    //A-Z = 65-90
-            (single_target[0][length] >96 && single_target[0][length] <123)         //a-z = 97-122
+            (targetName[length] >47 && targetName[length] <58)    ||    //0-9 = 48-57
+            (targetName[length] >64 && targetName[length] <91)    ||    //A-Z = 65-90
+            (targetName[length] >96 && targetName[length] <123)         //a-z = 97-122
             ){
+            length++;
+        }
+
+        else {
+            return 0;
+        }
+    }
+
+    return 1;
+
+}
+
+
+
+int validate_coordinate(char *latitude, char *longitude) {
+
+    // declare variables
+    int length = 0;
+
+    // validate the latitude
+    while (latitude[length] != '\0') {
+
+        if ((latitude[length] >44 && latitude[length] <47) ||     //  - = 45  . = 46
+            (latitude[length] >47 && latitude[length] <58)) {     //0-9 = 48-57
             length++;
         }
 
@@ -226,26 +252,19 @@ int validate_alphabet(char **single_target) {
     }
     length = 0;
 
+    // validate the longitude
+    while (longitude[length] != '\0') {
 
-    // validate the values -> single_target[1] and [2]
-    for (int i = 1; i<3; i++) {
-        while (single_target[i][length] != '\0') {
-
-            if (
-                (single_target[i][length] >44 && single_target[i][length] <47) ||    //  - = 45  . = 46
-                (single_target[i][length] >47 && single_target[i][length] <58)       //0-9 = 48-57
-                )
-            {
-                length++;
-            }
-
-            else {
-                return 0;
-            }
+        if ((longitude[length] >44 && longitude[length] <47) ||     //  - = 45  . = 46
+            (longitude[length] >47 && longitude[length] <58)) {     //0-9 = 48-57
+            length++;
         }
-        length = 0;
 
+        else {
+            return 0;
+        }
     }
+    length = 0;
 
     return 1;
 
@@ -278,7 +297,7 @@ int validate_length(char **single_target) {
 
 
 
-int validate_range(char **single_target) {
+int validate_range(char *charLatitude, char *charLongitude) {
 
     // declare variables
     double min = 0;
@@ -286,9 +305,9 @@ int validate_range(char **single_target) {
 
     // convert the string to double
     double latitude = 0;
-    sscanf(single_target[1], "%lf", &latitude);
+    sscanf(charLatitude, "%lf", &latitude);
     double longitude = 0;
-    sscanf(single_target[2], "%lf", &longitude);
+    sscanf(charLongitude, "%lf", &longitude);
 
 
     // validate range
@@ -339,33 +358,6 @@ int validate_conflict(char **single_target, TargetList *start) {
         }
     }
     return 1;
-}
-
-
-
-int validate_all_criteria(char *ptrName, char *ptrLatitude, char *ptrLongitude, TargetList *start) {
-
-    // print all parameters
-
-    // declare variables
-    char *single_target[3] = {};
-    single_target[0] = ptrName;
-    single_target[1] = ptrLatitude;
-    single_target[2] = ptrLongitude;
-
-    // check the different validity criteria
-    int a = validate_alphabet(single_target);
-    int l = validate_length(single_target);
-    int r = validate_range(single_target);
-    int c = validate_conflict(single_target, start);
-
-
-    // validate the single_target as a whole
-    if (a == 1 && l == 1 && r == 1 && c == 1) {
-        return 1;
-    }
-
-    return 0;
 }
 
 
@@ -533,6 +525,9 @@ int search_target(TargetList *start){
 TargetList* targets_damage_zone(TargetList *start) {
 
     // declare variables
+    char charLatitude[4] = {};
+    char charLongitude[4] = {};
+    char charDamageZone[4] = {};
     double latitude = 0;
     double longitude = 0;
     double damage_zone = 0;
@@ -541,31 +536,45 @@ TargetList* targets_damage_zone(TargetList *start) {
 
     // get user input
     printf("Enter targeted latitude: ");
-    scanf("%lf", &latitude);
+    scanf("%s", charLatitude);
     printf("Enter targeted longitude: ");
-    scanf("%lf", &longitude);
+    scanf("%s", charLongitude);
     printf("Enter radius of damage zone: ");
-    scanf("%lf", &damage_zone);
+    scanf("%s", charDamageZone);
 
 
-    // check the first list entry
-    if (start != NULL) {
-        double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
-        double length_vector = sqrt(vector);
-        if (length_vector <= damage_zone) {
-            add_linked_list2(&targets_damage_zone, start->name, start->latitude, start->longitude);
-        }
+    if (validate_coordinate(charLatitude, charLongitude) == 1 &&
+        validate_range(charLatitude, charLongitude) == 1) {
 
-        // check the following list entries
-        while (start->next != NULL) {
-            start = start->next;
+        sscanf(charLatitude, "%lf", &latitude);
+        sscanf(charLongitude, "%lf", &longitude);
+        sscanf(charDamageZone, "%lf", &damage_zone);
+
+        // check the first list entry
+        if (start != NULL) {
             double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
             double length_vector = sqrt(vector);
             if (length_vector <= damage_zone) {
                 add_linked_list2(&targets_damage_zone, start->name, start->latitude, start->longitude);
             }
+
+            // check the following list entries
+            while (start->next != NULL) {
+                start = start->next;
+                double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
+                double length_vector = sqrt(vector);
+                if (length_vector <= damage_zone) {
+                    add_linked_list2(&targets_damage_zone, start->name, start->latitude, start->longitude);
+                }
+            }
         }
     }
+
+    else {
+        printf("Invalid coordinates.\n");
+        return 0;
+    }
+
     return targets_damage_zone;
 }
 
@@ -665,46 +674,6 @@ void delete_target(TargetList **start, int position)
     free(temp->next);  // Free memory
 
     temp->next = *next;  // Unlink the deleted node from list
-}
-
-
-int validate_coordinate(void){
-
-    // declare variables
-    char *line = NULL;
-    size_t size = 0;
-    int dot = 0;
-
-
-    // get user input
-    printf("Please enter a number: ");
-    line = dynamicString();
-
-
-    // print result
-    printf("input: %s\n", line);
-
-
-    // check for dots
-    for(int i=0; i<size-1; i++) {
-        if (dot > 1) {
-            printf("dot = %d i = %d\n", dot, i);
-            return 0;
-        }
-        if (*(line+i) == '.') {
-            dot++;
-            continue;
-        }
-        if ( (int)*(line+i) < 48 || (int)*(line+i) > 57) {
-            printf("dot = %d i = %d\n", dot, i);
-            return 0;
-        }
-    }
-
-    // print no of dots
-    printf("dot = %d\n", dot);
-    return 1;
-
 }
 
 
