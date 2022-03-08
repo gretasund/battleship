@@ -37,13 +37,12 @@ void delete_target(TargetList **head_ref, int position);
 
 void print_menu(void) {
 
-    printf("\n");
     printf("1) Load a target file\n");
     printf("2) Show current targets\n");
     printf("3) Search a target\n");
     printf("4) Plan an airstrike\n");
     printf("5) Execute an airstrike\n");
-    printf("6) Quit\n\n");
+    printf("6) Quit\n");
 
 }
 
@@ -61,6 +60,12 @@ int get_option(void) {
         // get user input
         printf("Option: ");
         status = scanf("%2s", option);
+
+        if(getchar() == 1){
+            print("hallo\n");
+        }
+        print("hallo\n");
+
         while(getchar() != '\n');
 
         // check the input buffer
@@ -181,11 +186,12 @@ char *dynamicString(void){
     while (ch) {
         ch = getc(stdin);
 
-        /* Check if we need to stop. */
-        if (ch == EOF || ch == '\n')
+        // Check if we need to stop
+        if (ch == EOF || ch == '\n') {
             ch = 0;
+        }
 
-        /* Check if we need to expand. */
+        // Check if we need to expand
         if (size <= index) {
             size += sizeof(char);
             tmp = realloc(line, size);
@@ -197,7 +203,7 @@ char *dynamicString(void){
             line = tmp;
         }
 
-        /* Actually store the thing. */
+        // Actually store the thing
         line[index++] = ch;
     }
 
@@ -522,7 +528,7 @@ int search_target(TargetList *start){
 
 
 
-TargetList* targets_damage_zone(TargetList *start) {
+TargetList *targets_damage_zone(TargetList *start) {
 
     // declare variables
     char charLatitude[4] = {};
@@ -543,6 +549,7 @@ TargetList* targets_damage_zone(TargetList *start) {
     scanf("%s", charDamageZone);
 
 
+    // check input validity
     if (validate_coordinate(charLatitude, charLongitude) == 1 &&
         validate_range(charLatitude, charLongitude) == 1) {
 
@@ -580,41 +587,42 @@ TargetList* targets_damage_zone(TargetList *start) {
 
 
 
-TargetList* execute_air_strike(TargetList **start1) {
+TargetList *execute_air_strike(TargetList **start1) {
 
     // declare variables
     TargetList *list_targets_destroyed = NULL;
     TargetList *targets_damage_zone = NULL;
     TargetList *start = *(start1);
+    char charLatitude[4] = {};
+    char charLongitude[4] = {};
+    char charDamageZone[4] = {};
     double latitude = 0;
     double longitude = 0;
     double damage_zone = 0;
     int targets_destroyed = 0;
     int index = 0;
 
+
     // get user input
     printf("Enter targeted latitude: ");
-    scanf("%lf", &latitude);
+    scanf("%s", charLatitude);
     printf("Enter targeted longitude: ");
-    scanf("%lf", &longitude);
+    scanf("%s", charLongitude);
     printf("Enter radius of damage zone: ");
-    scanf("%lf", &damage_zone);
+    scanf("%s", charDamageZone);
 
-    // check the first entry
-    if (start != NULL) {
-        double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
-        double length_vector = sqrt(vector);
-        if (length_vector <= damage_zone) {
-            targets_destroyed++;
-            add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
-            delete_target(start1, index);
-            index--;
-        }
 
-        // check the following entries
-        while (start->next != NULL) {
-            start = start->next;
-            index++;
+    // check input validity
+    if (validate_coordinate(charLatitude, charLongitude) == 1 &&
+        validate_range(charLatitude, charLongitude) == 1) {
+
+        sscanf(charLatitude, "%lf", &latitude);
+        sscanf(charLongitude, "%lf", &longitude);
+        sscanf(charDamageZone, "%lf", &damage_zone);
+
+
+        // check the first entry
+        if (start != NULL) {
             double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
             double length_vector = sqrt(vector);
             if (length_vector <= damage_zone) {
@@ -623,8 +631,29 @@ TargetList* execute_air_strike(TargetList **start1) {
                 delete_target(start1, index);
                 index--;
             }
+
+            // check the following entries
+            while (start->next != NULL) {
+                start = start->next;
+                index++;
+                double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
+                double length_vector = sqrt(vector);
+                if (length_vector <= damage_zone) {
+                    targets_destroyed++;
+                    add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
+                    delete_target(start1, index);
+                    index--;
+                }
+            }
         }
+
     }
+
+    else {
+        printf("Invalid coordinates.\n");
+        return 0;
+    }
+
 
     // print the number of destroyed targets
     if (targets_destroyed > 0){
@@ -689,13 +718,11 @@ int main(void) {
     char *targets = NULL;
     TargetList *start = NULL;
     TargetList *list_targets_damage_zone = NULL;
-    TargetList *list_targets_destroyed = NULL;
 
 
     // user chooses an option
     while (option != 6) {
         option = get_option();
-        //while(getchar() != '\n');
 
         // perform the correct option
         switch (option) {
@@ -718,7 +745,7 @@ int main(void) {
                 break;
 
             case 5:
-                list_targets_destroyed = execute_air_strike(&start);
+                execute_air_strike(&start);
                 break;
 
             case 6:
