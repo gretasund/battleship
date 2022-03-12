@@ -15,7 +15,6 @@ typedef struct target_list TargetList;
 
 
 
-typedef struct char_list CharList;
 void print_menu(void);
 int get_option(void);
 int load_target_file(char **targets, TargetList **start);
@@ -55,21 +54,13 @@ int get_option(void) {
 
     while(status == 0){
 
-        char option[1] = {};
-
         // get user input
+        char *option = NULL;
         printf("Option: ");
-        status = scanf("%2s", option);
-
-        if(getchar() == 1){
-            print("hallo\n");
-        }
-        print("hallo\n");
-
-        while(getchar() != '\n');
+        option = dynamicString();
 
         // check the input buffer
-        if (strlen(option) == 2) {
+        if (strlen(option) == 1) {
             if (option[0] >48 && option[0] <55) {
                 status = 0;
                 return (int)option[0]-48;
@@ -143,12 +134,6 @@ int load_target_file(char **targets, TargetList **start) {
         single_target[0] = targets[i+0];
         single_target[1] = targets[i+1];
         single_target[2] = targets[i+2];
-
-        /*int a = validate_name(targets[i+0]);
-        int b = validate_coordinate(targets[i+1], targets[i+2]);
-        int c = validate_length(single_target);
-        int d = validate_range(targets[i+1], targets[i+1]);
-        printf("a = %d, b = %d, c = %d, d = %d\n", a, b, c, d);*/
 
         if(validate_name(targets[i+0]) == 0 ||
            validate_coordinate(targets[i+1], targets[i+2]) == 0 ||
@@ -505,6 +490,7 @@ int search_target(TargetList *start){
     // get user input
     printf("Enter the name: ");
     scanf("%[^\n]", target);
+    while(getchar() != '\n');
     if(strcmp(target, "\0") == 0) {
         return 0;
     }
@@ -547,6 +533,7 @@ TargetList *targets_damage_zone(TargetList *start) {
     scanf("%s", charLongitude);
     printf("Enter radius of damage zone: ");
     scanf("%s", charDamageZone);
+    while(getchar() != '\n');
 
 
     // check input validity
@@ -610,6 +597,7 @@ TargetList *execute_air_strike(TargetList **start1) {
     scanf("%s", charLongitude);
     printf("Enter radius of damage zone: ");
     scanf("%s", charDamageZone);
+    while(getchar() != '\n');
 
 
     // check input validity
@@ -758,8 +746,6 @@ int main(void) {
     }
 
     printf("Exit.\n");
-
-    // Free memory
-
     return 0;
 }
+
