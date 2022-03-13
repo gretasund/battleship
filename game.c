@@ -28,8 +28,7 @@ int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *
 int add_linked_list2(TargetList **start, char *ptrName, double latitude, double longitude);
 void list_print(TargetList *start);
 void search_target(TargetList *start);
-TargetList* plan_airstrike(TargetList *start);
-TargetList* execute_air_strike(TargetList **start1);
+void execute_airstrike(TargetList **ptrStart);
 void delete_target(TargetList **head_ref, int position);
 
 
@@ -133,7 +132,6 @@ int load_target_file(char **targets, TargetList **start) {
            validate_length(targets[i+0], targets[i+1], targets[i+2]) == 0 ||
            validate_range(targets[i+1], targets[i+2]) == 0) {
             printf("Invalid file.\n");
-            while(getchar() != '\n');
             return 0;
         }
     }
@@ -416,12 +414,14 @@ int add_linked_list2(TargetList **start, char *ptrName, double latitude, double 
 
 void list_print(TargetList *start){
 
-   while(start != NULL){
-       printf("%s ", start->name);
-       printf("%f ", start->latitude);
-       printf("%f\n", start->longitude);
-       start = start->next;
-   }
+    while(start != NULL){
+        //printf("Der segmentation fault kommt in list_print zustande.\n");
+        printf("start = %p\n", start);
+        printf("%s ", start->name);
+        printf("%f ", start->latitude);
+        printf("%f\n", start->longitude);
+        start = start->next;
+    }
 }
 
 
@@ -556,12 +556,10 @@ TargetList *plan_airstrike(TargetList *start) {
 
 
 
-TargetList *execute_air_strike(TargetList **start1) {
+void execute_airstrike(TargetList **ptrStart) {
 
     // declare variables
-    TargetList *list_targets_destroyed = NULL;
-    TargetList *targets_damage_zone = NULL;
-    TargetList *start = *(start1);
+    TargetList *start = *ptrStart;
     char charLatitude[4] = {};
     char charLongitude[4] = {};
     char charDamageZone[4] = {};
@@ -585,7 +583,6 @@ TargetList *execute_air_strike(TargetList **start1) {
     // check input validity
     if (validate_coordinate(charLatitude, charLongitude) == 1 &&
         validate_range(charLatitude, charLongitude) == 1) {
-
         sscanf(charLatitude, "%lf", &latitude);
         sscanf(charLongitude, "%lf", &longitude);
         sscanf(charDamageZone, "%lf", &damage_zone);
@@ -597,8 +594,8 @@ TargetList *execute_air_strike(TargetList **start1) {
             double length_vector = sqrt(vector);
             if (length_vector <= damage_zone) {
                 targets_destroyed++;
-                add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
-                delete_target(start1, index);
+                printf("%s %lf %lf\n", start->name, start->latitude, start->longitude);
+                delete_target(ptrStart, index);
                 index--;
             }
 
@@ -610,8 +607,8 @@ TargetList *execute_air_strike(TargetList **start1) {
                 double length_vector = sqrt(vector);
                 if (length_vector <= damage_zone) {
                     targets_destroyed++;
-                    add_linked_list2(&list_targets_destroyed, start->name, start->latitude, start->longitude);
-                    delete_target(start1, index);
+                    printf("%s %lf %lf\n", start->name, start->latitude, start->longitude);
+                    delete_target(ptrStart, index);
                     index--;
                 }
             }
@@ -621,58 +618,60 @@ TargetList *execute_air_strike(TargetList **start1) {
 
     else {
         printf("Invalid coordinates.\n");
-        return 0;
+        return;
     }
 
 
     // print the number of destroyed targets
     if (targets_destroyed > 0){
         printf("%d target destroyed\n", targets_destroyed);
-        list_print(list_targets_destroyed);
     }
     else {
         printf("No target aimed. Mission cancelled.\n");
     }
-
-    return targets_damage_zone;
-
 }
 
 
 
-void delete_target(TargetList **start, int position)
-{
-   // If TargetList is empty
-   if (*start == NULL)
+void delete_target(TargetList **start, int position) {
+
+    // IF TARGETLIST IS EMPTY
+    if (*start == NULL) {
       return;
+    }
 
-   // Store head node
-   TargetList* temp = *start;
+    // Store head node
+    TargetList* temp = *start;
 
-    // If head needs to be removed
-    if (position == 0)
-    {
+
+    // IF HEADS NEEDS TO BE REMOVED
+    if (position == 0) {
         *start = temp->next;      // Change start
         free(temp);               // free old start
         return;
     }
 
-    // Find previous node of the node to be deleted
-    for (int i=0; temp!=NULL && i<position-1; i++)
-         temp = temp->next;
 
-    // If position is more than number of ndoes
-    if (temp == NULL || temp->next == NULL)
+    // IF A "NORMAL NODE" HAS TO BE DELETED
+    // Find previous node of the node to be deleted
+    for (int i=0; temp!=NULL && i<position-1; i++) {
+         temp = temp->next;
+    }
+
+    // If position is more than number of nodes
+    if (temp == NULL || temp->next == NULL) {
          return;
+    }
 
     // Node temp->next is the node to be deleted
     // Store pointer to the next of node to be deleted
     TargetList* *next = &temp->next->next;
 
-    // Unlink the node from linked list
-    free(temp->next);  // Free memory
 
-    temp->next = *next;  // Unlink the deleted node from list
+    // Unlink the node from linked list
+    free(temp->next);
+    // Unlink the deleted node from list
+    temp->next = *next;
 }
 
 
@@ -715,7 +714,7 @@ int main(void) {
                 break;
 
             case 5:
-                execute_air_strike(&start);
+                execute_airstrike(&start);
                 break;
 
             case 6:
@@ -729,3 +728,4 @@ int main(void) {
 
     return 0;
 }
+
