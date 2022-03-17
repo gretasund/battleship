@@ -114,36 +114,58 @@ int load_target_file(char **targets, TargetList **start) {
     fread(string, 1, fpsize, fp);           // read the whole file
     fclose(fp);                             // close the file
     string[fpsize] = 0;
+    //printf("\nString\n%s\n", string);
 
+    char *string2 = malloc(fpsize + 1);
+    strcpy(string2, string);
+    //printf("\nString2\n%s\n\n", string2);
 
-    // separate the string
-    char *temp = strtok(string, " \t\r\n\f\v");
-    int number_targets = 0;
+    // check the format validity
+    char *name = strtok(string, " \t\r\n\f\v");
+    char *lat = strtok(NULL, " \t\r\n\f\v");
+    char *lon = strtok(NULL, " \t\r\n\f\v");
 
-    while(temp != NULL) {
-        targets[number_targets] = temp;
-        temp = strtok(NULL, " \t\r\n\f\v");
-        number_targets++;
-    }
+    while(name != NULL) {
+        name = strtok(NULL, " \t\r\n\f\v");
 
-    for (int i = 0; i<number_targets; i+=3) {
-        if(validate_name(targets[i+0]) == 0 ||
-           validate_coordinate(targets[i+1], targets[i+2]) == 0 ||
-           validate_length(targets[i+0], targets[i+1], targets[i+2]) == 0 ||
-           validate_range(targets[i+1], targets[i+2]) == 0) {
+        if (name == NULL) {
+            break;
+        }
+
+        lat = strtok(NULL, " \t\r\n\f\v");
+        lon = strtok(NULL, " \t\r\n\f\v");
+
+        if(validate_name(name) == 0 ||
+           validate_coordinate(lat, lon) == 0 ||
+           validate_length(name, lat, lon) == 0 ||
+           validate_range(lat, lon) == 0) {
+            string = NULL;
             printf("Invalid file.\n");
             return 0;
         }
     }
+    string = NULL;
 
 
-    // add targets to the list
-    for (int i = 0; i<number_targets; i+=3) {
-        //printf("vc = %d\n", validate_conflict(targets[i+1], targets[i+2], *start));
-        //printf("  latitude = %s\n", targets[i+1]);
-        if(validate_conflict(targets[i+1], targets[i+2], *start) == 1) {
-            add_linked_list(start, targets[i+0], targets[i+1], targets[i+2]);
+    // check the distance between existing targets
+    //printf("\nThis is the rest of String\n%s\n", string);
+
+    name = strtok(string2, " \t\r\n\f\v");
+    lat = strtok(NULL, " \t\r\n\f\v");
+    lon = strtok(NULL, " \t\r\n\f\v");
+
+    while(name != NULL) {
+        if(validate_conflict(lat, lon, *start) == 1) {
+            add_linked_list(start, name, lat, lon);
         }
+        name = strtok(NULL, " \t\r\n\f\v");
+
+        if (name == NULL) {
+            break;
+        }
+
+        lat = strtok(NULL, " \t\r\n\f\v");
+        lon = strtok(NULL, " \t\r\n\f\v");
     }
 
     free(string);
@@ -415,8 +437,6 @@ int add_linked_list2(TargetList **start, char *ptrName, double latitude, double 
 void list_print(TargetList *start){
 
     while(start != NULL){
-        //printf("Der segmentation fault kommt in list_print zustande.\n");
-        printf("start = %p\n", start);
         printf("%s ", start->name);
         printf("%f ", start->latitude);
         printf("%f\n", start->longitude);
@@ -728,4 +748,3 @@ int main(void) {
 
     return 0;
 }
-
