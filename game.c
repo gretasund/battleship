@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 
 struct target_list {
@@ -15,35 +16,21 @@ typedef struct target_list TargetList;
 
 
 
-void print_menu(void);
 int get_option(void);
-int load_target_file(char **targets, TargetList **start);
+void load_target_file(char **targets, TargetList **start);
 char *dynamicString(void);
 int validate_name(char *charName);
 int validate_coordinate(char *charLatitude, char *charLongitude);
 int validate_length(char *charName, char *charLatitude, char *charLongitude);
 int validate_range(char *charLatitude, char *charLongitude);
 int validate_conflict(char *charLatitude, char *charLongitude, TargetList *start);
-int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude);
-void list_print(TargetList *start);
-void map_print(TargetList *start);
+void add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude);
+void list__map_print(TargetList *start);
 void search_target(TargetList *start);
 void plan_airstrike(TargetList *start);
+void freeList(TargetList *start);
 void execute_airstrike(TargetList **ptrStart);
 void delete_target(TargetList **head_ref, int position);
-
-
-
-void print_menu(void) {
-
-    printf("1) Load a target file\n");
-    printf("2) Show current targets\n");
-    printf("3) Search a target\n");
-    printf("4) Plan an airstrike\n");
-    printf("5) Execute an airstrike\n");
-    printf("6) Quit\n");
-
-}
 
 
 
@@ -59,7 +46,12 @@ int get_option(void) {
         printf("Option: ");
         option = dynamicString();
 
-        // check the input buffer
+        // check if the user entered a new line character
+        if(strcmp(option, "\0") == 0) {
+            return 0;
+        }
+
+        // check length and first character
         if (strlen(option) == 1) {
             if (option[0] >48 && option[0] <55) {
                 return (int)option[0]-48;
@@ -81,7 +73,7 @@ int get_option(void) {
 
 
 
-int load_target_file(char **targets, TargetList **start) {
+void load_target_file(char **targets, TargetList **start) {
 
     // declare variables
     char *file_name = NULL;
@@ -92,28 +84,31 @@ int load_target_file(char **targets, TargetList **start) {
     printf("Enter a target file: ");
     file_name = dynamicString();
 
+    // check if the user entered a new line character
+    if(strcmp(file_name, "\0") == 0) {
+        return;
+    }
 
     // open the file, display error message if invalid
     fp = fopen(file_name,"r");
     if (fp == NULL) {
     printf("Invalid file.\n");
-    return 0;
+    return;
     }
 
-
     // read the whole file
-    fseek(fp, 0, SEEK_END);                 // sets the offset to the end
-    long fpsize = ftell(fp);                // returns the given file position
-    rewind(fp);                             // sets the position to the beginning
+    fseek(fp, 0, SEEK_END);                         // set the offset to the end
+    long fpsize = ftell(fp);                        // get the file position
+    rewind(fp);                                     // set the position to the beginning
     char *string = malloc(fpsize + 1);
 
-    if (string == NULL) {                   // check the return value of malloc & fread!
+    if (string == NULL) {
         printf("Unable to allocate memory.\n");
         exit(-1);
     }
 
-    fread(string, 1, fpsize, fp);           // read the whole file
-    fclose(fp);                             // close the file
+    fread(string, 1, fpsize, fp);
+    fclose(fp);
     string[fpsize] = 0;
 
     char *string2 = malloc(fpsize + 1);
@@ -141,7 +136,7 @@ int load_target_file(char **targets, TargetList **start) {
            validate_range(lat, lon) == 0) {
             string = NULL;
             printf("Invalid file.\n");
-            return 0;
+            return;
         }
     }
     string = NULL;
@@ -167,7 +162,8 @@ int load_target_file(char **targets, TargetList **start) {
     }
 
     free(string);
-    return 1;
+    free(string2);
+    return;
 }
 
 
@@ -229,7 +225,6 @@ int validate_name(char *charName) {
     }
 
     return 1;
-
 }
 
 
@@ -268,7 +263,6 @@ int validate_coordinate(char *charLatitude, char *charLongitude) {
     length = 0;
 
     return 1;
-
 }
 
 
@@ -295,22 +289,17 @@ int validate_range(char *charLatitude, char *charLongitude) {
     double longitude = 0;
     sscanf(charLongitude, "%lf", &longitude);
 
+    // check range
+    bool longitudeIsValid = (longitude >= min && longitude <= max);
+    bool latitudeIsValid = (latitude >= min && latitude <= max);
 
     // validate range
-    if (latitude >= min && latitude <= max) {
+    if (longitudeIsValid && latitudeIsValid) {
+    	return 1;
     }
-
     else {
         return 0;
     }
-
-    if (longitude >= min && longitude <= max) {
-    }
-
-    else {
-        return 0;
-    }
-    return 1;
 }
 
 
@@ -323,7 +312,7 @@ int validate_conflict(char *charLatitude, char *charLongitude, TargetList *start
     double longitude = 0;
     sscanf(charLongitude, "%lf", &longitude);
 
-
+    // check distance between targets
     if (start != NULL) {
         double vector = (pow((start->latitude)-latitude, 2) + pow((start->longitude)-longitude, 2));
         double length_vector = sqrt(vector);
@@ -347,23 +336,19 @@ int validate_conflict(char *charLatitude, char *charLongitude, TargetList *start
 
 
 
-int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude) {
+void add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude) {
 
-    // declare variables and change data type
-    // convert the string to double
+    // declare variables and convert the string to double
     double latitude = 0;
     sscanf(ptrLatitude, "%lf", &latitude);
     double longitude = 0;
     sscanf(ptrLongitude, "%lf", &longitude);
 
-
     // Allocate memory
     TargetList *newTarget = malloc(sizeof(TargetList));
 
-
     // If memory could be allocated
     if (newTarget != NULL) {
-
         // set parameters
         newTarget->name = ptrName;
         newTarget->latitude = latitude;
@@ -383,14 +368,14 @@ int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *
            }
            cur->next = newTarget;
         }
-        return 1;
+        return;
     }
-    return 0;
+    return;
 }
 
 
 
-void list_print(TargetList *start){
+void list_map_print(TargetList *start){
 
     while(start != NULL){
         printf("%s ", start->name);
@@ -398,11 +383,6 @@ void list_print(TargetList *start){
         printf("%f\n", start->longitude);
         start = start->next;
     }
-}
-
-
-
-void map_print(TargetList *start) {
 
     if (start != NULL) {
         int mapY;
@@ -451,6 +431,7 @@ void search_target(TargetList *start){
     printf("Enter the name: ");
     searched_target = dynamicString();
 
+    // check if the user entered a new line character
     if(strcmp(searched_target, "\0") == 0) {
         return;
     }
@@ -491,6 +472,10 @@ void plan_airstrike(TargetList *start) {
     printf("Enter radius of damage zone: ");
     charDamageZone = dynamicString();
 
+    // check if the user entered a new line character
+    if(strcmp(charLatitude, "\0") == 0 || strcmp(charLongitude, "\0") == 0 || strcmp(charDamageZone, "\0") == 0) {
+        return;
+    }
 
     // check input validity
     if (validate_coordinate(charLatitude, charLongitude) == 1 &&
@@ -545,10 +530,14 @@ void execute_airstrike(TargetList **ptrStart) {
     printf("Enter targeted latitude: ");
     charLatitude = dynamicString();
     printf("Enter targeted longitude: ");
-    charLongitude = dynamicString();;
+    charLongitude = dynamicString();
     printf("Enter radius of damage zone: ");
     charDamageZone = dynamicString();
 
+    // check if the user entered a new line character
+    if(strcmp(charLatitude, "\0") == 0 || strcmp(charLongitude, "\0") == 0 || strcmp(charDamageZone, "\0") == 0) {
+        return;
+    }
 
     // check input validity
     if (validate_coordinate(charLatitude, charLongitude) == 1 &&
@@ -556,7 +545,6 @@ void execute_airstrike(TargetList **ptrStart) {
         sscanf(charLatitude, "%lf", &latitude);
         sscanf(charLongitude, "%lf", &longitude);
         sscanf(charDamageZone, "%lf", &damage_zone);
-
 
         // check the first entry
         if (start != NULL) {
@@ -589,7 +577,6 @@ void execute_airstrike(TargetList **ptrStart) {
         return;
     }
 
-
     // print the number of destroyed targets
     if (targets_destroyed > 0){
         printf("%d target destroyed\n", targets_destroyed);
@@ -603,7 +590,7 @@ void execute_airstrike(TargetList **ptrStart) {
 
 void delete_target(TargetList **start, int position) {
 
-    // IF TARGETLIST IS EMPTY
+    // If start is empty
     if (*start == NULL) {
       return;
     }
@@ -611,16 +598,13 @@ void delete_target(TargetList **start, int position) {
     // Store head node
     TargetList* temp = *start;
 
-
-    // IF HEADS NEEDS TO BE REMOVED
+    // If the head needs to deleted
     if (position == 0) {
         *start = temp->next;      // Change start
         free(temp);               // free old start
         return;
     }
 
-
-    // IF A "NORMAL NODE" HAS TO BE DELETED
     // Find previous node of the node to be deleted
     for (int i=0; temp!=NULL && i<position-1; i++) {
          temp = temp->next;
@@ -644,17 +628,31 @@ void delete_target(TargetList **start, int position) {
 
 
 
+void freeList(TargetList *start){
+    TargetList *curr;
+    while(start !=NULL){
+       curr = start; // previous node
+       start = start->next;
+       free(curr); // free previous node
+    }
+}
+
+
+
 int main(void) {
 
     // print the menu
-    print_menu();
-
+    printf("1) Load a target file\n");
+    printf("2) Show current targets\n");
+    printf("3) Search a target\n");
+    printf("4) Plan an airstrike\n");
+    printf("5) Execute an airstrike\n");
+    printf("6) Quit\n");
 
     // declare variables
     int option = 0;
     char *targets = NULL;
     TargetList *start = NULL;
-
 
     // user chooses an option
     while (option != 6) {
@@ -665,30 +663,24 @@ int main(void) {
             case 1:
                 load_target_file(&targets, &start);
                 break;
-
             case 2:
-                list_print(start);
-                map_print(start);
+                list_map_print(start);
                 break;
-
             case 3:
                 search_target(start);
                 break;
-
             case 4:
                 plan_airstrike(start);
                 break;
-
             case 5:
                 execute_airstrike(&start);
                 break;
-
             case 6:
+                freeList(start);
                 exit(1);
-
             default:
-                printf("Something went wrong.\n");
-
+                printf("Unknown option.\n");
+                option = get_option();
         }
     }
     return 0;
