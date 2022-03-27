@@ -20,7 +20,7 @@ int get_option(void);
 void load_target_file(char **targets, TargetList **start);
 char *dynamicString(void);
 int validate_name(char *charName);
-int validate_coordinate(char *charLatitude, char *charLongitude);
+int validate_coordinate(char *charLatitude, char *charLongitude, char *charDamageZone);
 int validate_length(char *charName, char *charLatitude, char *charLongitude);
 int validate_range(char *charLatitude, char *charLongitude);
 int validate_conflict(char *charLatitude, char *charLongitude, TargetList *start);
@@ -120,9 +120,17 @@ void load_target_file(char **targets, TargetList **start) {
     char *lat = strtok(NULL, " \t\r\n\f\v");
     char *lon = strtok(NULL, " \t\r\n\f\v");
 
+    if(validate_name(name) == 0 ||
+       validate_coordinate(lat, lon, 0) == 0 ||
+       validate_length(name, lat, lon) == 0 ||
+       validate_range(lat, lon) == 0) {
+        string = NULL;
+        printf("Invalid file.\n");
+        return;
+    }
+
     while(name != NULL) {
         name = strtok(NULL, " \t\r\n\f\v");
-
         if (name == NULL) {
             break;
         }
@@ -131,7 +139,7 @@ void load_target_file(char **targets, TargetList **start) {
         lon = strtok(NULL, " \t\r\n\f\v");
 
         if(validate_name(name) == 0 ||
-           validate_coordinate(lat, lon) == 0 ||
+           validate_coordinate(lat, lon, 0) == 0 ||
            validate_length(name, lat, lon) == 0 ||
            validate_range(lat, lon) == 0) {
             string = NULL;
@@ -229,39 +237,41 @@ int validate_name(char *charName) {
 
 
 
-int validate_coordinate(char *charLatitude, char *charLongitude) {
+int validate_coordinate(char *charLatitude, char *charLongitude, char *charDamageZone) {
 
     // declare variables
-    int length = 0;
+    char *checkedVariable = NULL;
 
-    // validate the latitude
-    while (charLatitude[length] != '\0') {
-
-        if ((charLatitude[length] >44 && charLatitude[length] <47) ||     //  - = 45  . = 46
-            (charLatitude[length] >47 && charLatitude[length] <58)) {     //0-9 = 48-57
-            length++;
+    // set the paramater to be checked
+    for (int i=1; i<4; i++) {
+        switch (i) {
+            case 1:
+                checkedVariable = charLatitude;
+                break;
+            case 2:
+                checkedVariable = charLongitude;
+                break;
+            case 3:
+                checkedVariable = charDamageZone;
+                break;
         }
 
-        else {
-            return 0;
+        // check validity
+        if(checkedVariable != NULL) {
+            for (int j=0; j<strlen(checkedVariable); j++) {
+                if ((checkedVariable[j] == 46) ||                             // . = 46
+                    (checkedVariable[j] >47 && checkedVariable[j] <58)) {     // 0-9 = 48-57
+                }
+                else {
+                    return 0;
+                }
+            }
+
+            if (strlen(checkedVariable) == 1 && checkedVariable[0] == 46) {
+                return 0;
+            }
         }
     }
-    length = 0;
-
-    // validate the longitude
-    while (charLongitude[length] != '\0') {
-
-        if ((charLongitude[length] >44 && charLongitude[length] <47) ||     //  - = 45  . = 46
-            (charLongitude[length] >47 && charLongitude[length] <58)) {     //0-9 = 48-57
-            length++;
-        }
-
-        else {
-            return 0;
-        }
-    }
-    length = 0;
-
     return 1;
 }
 
@@ -269,7 +279,7 @@ int validate_coordinate(char *charLatitude, char *charLongitude) {
 
 int validate_length(char *charName, char *charLatitude, char *charLongitude) {
 
-    if(strlen(charName) > 15 || strlen(charLatitude) > 15 || strlen(charLongitude) > 15) {
+    if(strlen(charName) > 15) {
         return 0;
     }
     return 1;
@@ -295,7 +305,7 @@ int validate_range(char *charLatitude, char *charLongitude) {
 
     // validate range
     if (longitudeIsValid && latitudeIsValid) {
-    	return 1;
+        return 1;
     }
     else {
         return 0;
@@ -377,12 +387,16 @@ void add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char 
 
 void list_map_print(TargetList *start){
 
+    TargetList *start_copy = start;
+
     while(start != NULL){
         printf("%s ", start->name);
         printf("%f ", start->latitude);
         printf("%f\n", start->longitude);
         start = start->next;
     }
+    start = start_copy;
+
 
     if (start != NULL) {
         int mapY;
@@ -478,7 +492,7 @@ void plan_airstrike(TargetList *start) {
     }
 
     // check input validity
-    if (validate_coordinate(charLatitude, charLongitude) == 1 &&
+    if (validate_coordinate(charLatitude, charLongitude, charDamageZone) == 1 &&
         validate_range(charLatitude, charLongitude) == 1) {
 
         sscanf(charLatitude, "%lf", &latitude);
@@ -540,7 +554,7 @@ void execute_airstrike(TargetList **ptrStart) {
     }
 
     // check input validity
-    if (validate_coordinate(charLatitude, charLongitude) == 1 &&
+    if (validate_coordinate(charLatitude, charLongitude, charDamageZone) == 1 &&
         validate_range(charLatitude, charLongitude) == 1) {
         sscanf(charLatitude, "%lf", &latitude);
         sscanf(charLongitude, "%lf", &longitude);
