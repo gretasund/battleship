@@ -3,7 +3,6 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include <stdbool.h>
 
 
 struct target_list {
@@ -116,9 +115,9 @@ void load_target_file(char **targets, TargetList **start) {
 
 
     // check the format validity
-    char *name = strtok(string, " \t\r\n\f\v");
-    char *lat = strtok(NULL, " \t\r\n\f\v");
-    char *lon = strtok(NULL, " \t\r\n\f\v");
+    char *name = strtok(string, " ");
+    char *lat = strtok(NULL, " ");
+    char *lon = strtok(NULL, " ");
 
     if(validate_name(name) == 0 ||
        validate_coordinate(lat, lon, 0) == 0 ||
@@ -130,13 +129,13 @@ void load_target_file(char **targets, TargetList **start) {
     }
 
     while(name != NULL) {
-        name = strtok(NULL, " \t\r\n\f\v");
+        name = strtok(NULL, " ");
         if (name == NULL) {
             break;
         }
 
-        lat = strtok(NULL, " \t\r\n\f\v");
-        lon = strtok(NULL, " \t\r\n\f\v");
+        lat = strtok(NULL, " ");
+        lon = strtok(NULL, " ");
 
         if(validate_name(name) == 0 ||
            validate_coordinate(lat, lon, 0) == 0 ||
@@ -151,22 +150,22 @@ void load_target_file(char **targets, TargetList **start) {
 
 
     // check for conflicts
-    name = strtok(string2, " \t\r\n\f\v");
-    lat = strtok(NULL, " \t\r\n\f\v");
-    lon = strtok(NULL, " \t\r\n\f\v");
+    name = strtok(string2, " ");
+    lat = strtok(NULL, " ");
+    lon = strtok(NULL, " ");
 
     while(name != NULL) {
         if(validate_conflict(lat, lon, *start) == 1) {
             add_linked_list(start, name, lat, lon);
         }
-        name = strtok(NULL, " \t\r\n\f\v");
+        name = strtok(NULL, " ");
 
         if (name == NULL) {
             break;
         }
 
-        lat = strtok(NULL, " \t\r\n\f\v");
-        lon = strtok(NULL, " \t\r\n\f\v");
+        lat = strtok(NULL, " ");
+        lon = strtok(NULL, " ");
     }
 
     free(string);
@@ -300,8 +299,8 @@ int validate_range(char *charLatitude, char *charLongitude) {
     sscanf(charLongitude, "%lf", &longitude);
 
     // check range
-    bool longitudeIsValid = (longitude >= min && longitude <= max);
-    bool latitudeIsValid = (latitude >= min && latitude <= max);
+    int longitudeIsValid = (longitude >= min && longitude <= max);
+    int latitudeIsValid = (latitude >= min && latitude <= max);
 
     // validate range
     if (longitudeIsValid && latitudeIsValid) {
