@@ -3,6 +3,11 @@
 #include <string.h>
 
 
+int print_menue(void);
+void load_target_file(void);
+int validate_input(char **targets, int number_targets);
+
+
 int print_menue(void) {
     
     int status, input, buffer;
@@ -48,38 +53,19 @@ int print_menue(void) {
 }
 
 
-void replaceAll(char *string, char oldChar, char newChar)
-{
-    int i = 0;
-
-    /* Run till end of string */
-    while(string[i] != '\0')
-    {
-        /* If occurrence of character is found */
-        if(string[i] == oldChar)
-        {
-            string[i] = newChar;
-        }
-
-        i++;
-    }
-}
-
-
 void load_target_file(void) {
     
     // declare variables
-    char file_name[30] = {};
+    char file_name[30] = "file_valid.txt";
     FILE *fp;
-    // char buffer[255];
-    // char buffer2[255];
+    int number_targets = 0;
     
     // get user input
     printf("Enter a target file: \n");
-    scanf("%s", file_name);
+    // scanf("%s", file_name);
     
     // open the file
-    fp = fopen(file_name,"r");              // file_valid.txt
+    fp = fopen(file_name,"r");
     
     // display error message if invalid
     if (fp == NULL) {
@@ -96,67 +82,72 @@ void load_target_file(void) {
     fclose(fp);                             // close the file
 
     string[fpsize] = 0;                     // free string
-    printf("%s\n", string);
+    //printf("%s\n", string);
     
     // print the string´s single chars
-    printf("Print the string´s single chars:\n");
+    /*printf("Print the string´s single chars:\n");
     for (int i = 0; i<fpsize; i++) {
         printf("string[%d] = %c\n", i, string[i]);
-    }
+    }*/
     
-    // replace all '\n' with a ' '
-    // string[35] = ' ';
-    // string[77] = ' ';
-    // replaceAll(string, '\n', ' ');
-    
-    // print the string´s single chars
-    printf("Print the string´s single chars:\n");
-    for (int i = 0; i<fpsize; i++) {
-        printf("string[%d] = %c\n", i, string[i]);
-    }
-
     // separate the string
     char *temp = strtok(string, " \t\r\n\f\v");
-    char *targets[30][17] = {};
+    char *targets[30] = {};
     int j = 0;
-    int k = 0;
 
     while(temp != NULL) {
-        targets[j][0] = temp;
-        //printf("%s\n", temp);
+        targets[j] = temp;
         temp = strtok(NULL, " \t\r\n\f\v");
         j++;
-        
-        if (j%3  == 0) {
-            printf("\n");
-        }
     }
-    
+    number_targets = j;
     
     // print the separated string
     printf("Print the separated string:\n");
-    for (int i = 0; i<30; i++) {
-        printf("targets[%d] = %s\n", i, *(targets[i]));
+    for (int i = 0; i<number_targets+1; i+=3) {
+        printf("targets[%d] =\n", i);
+        printf(" name[%d] = %s\n", i, targets[i]);
+        printf(" value[%d] = %s\n", i, targets[i+1]);
+        printf(" value[%d] = %s\n", i, targets[i+2]);
+        printf("\n");
     }
     
-    
-    // Print the separated string
-    /*while (targets[k] != NULL && j < 18) {
-    int length = strlen(*(targets[k]));
-    printf("targets[%d] = %s, length = %d\n",  k, *(targets[k]), length);
-    k++;
-    }*/
-    
-    //printf("target[5] = %s and %lu\n", *(targets[5]), strlen(*(targets[5])));
-    //printf("target[12] = %s and %lu\n", *(targets[12]), strlen(*(targets[12])));
-    
-    for (int i = 0; i< fpsize; i++) {
-        printf("%c", string[i]);
+    // validate the input
+    if (validate_input(targets, number_targets) == 1) {
+        printf("Valid file.\n");
     }
-    puts("\n");
     
-    printf("targets[12] = %s\n", targets[12][0]);
-    printf("targets[12] = %d\n", (int)targets[12][0]);
+    else {
+        printf("Invalid file!\n");
+    }
+
+}
+
+
+int validate_input(char **targets, int number_targets) {
+
+    int j = 0;
+    int length = 0;
+    
+    for (int i = 0; i<number_targets; i++) {
+        
+        j = 0;
+        length = 0;
+        
+        while (targets[i][j] != '\0') {
+            length++;
+            j++;
+        }
+        
+        //printf("At %d length = %d\n", i, length);
+
+        if(length > 16) {
+            return 0;
+        }
+    }
+    
+    return 1;
+    
 }
 
 
