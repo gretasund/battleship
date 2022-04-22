@@ -5,7 +5,7 @@
 
 int print_menue(void);
 void load_target_file(void);
-int validate_input(char **targets, int number_targets);
+int validate_length(char **targets, int number_targets);
 
 
 int print_menue(void) {
@@ -25,6 +25,7 @@ int print_menue(void) {
         // get user input
         printf("Please enter a number: ");
         status = scanf("%d", &input);
+        
         
         // check the input buffer
         buffer = getchar();
@@ -53,24 +54,29 @@ int print_menue(void) {
 }
 
 
+
 void load_target_file(void) {
     
     // declare variables
-    char file_name[30] = "file_valid.txt";
+    char file_name[30] = "file_invalid.txt";
     FILE *fp;
     int number_targets = 0;
+    
     
     // get user input
     printf("Enter a target file: \n");
     // scanf("%s", file_name);
     
+    
     // open the file
     fp = fopen(file_name,"r");
+    
     
     // display error message if invalid
     if (fp == NULL) {
     printf("Invalid file.\n");
     }
+    
     
     // read and print the whole file
     fseek(fp, 0, SEEK_END);                 // sets the offset to the end
@@ -84,11 +90,13 @@ void load_target_file(void) {
     string[fpsize] = 0;                     // free string
     //printf("%s\n", string);
     
+    
     // print the string´s single chars
     /*printf("Print the string´s single chars:\n");
     for (int i = 0; i<fpsize; i++) {
         printf("string[%d] = %c\n", i, string[i]);
     }*/
+
     
     // separate the string
     char *temp = strtok(string, " \t\r\n\f\v");
@@ -102,6 +110,7 @@ void load_target_file(void) {
     }
     number_targets = j;
     
+    
     // print the separated string
     printf("Print the separated string:\n");
     for (int i = 0; i<number_targets+1; i+=3) {
@@ -112,8 +121,9 @@ void load_target_file(void) {
         printf("\n");
     }
     
+    
     // validate the input
-    if (validate_input(targets, number_targets) == 1) {
+    if (validate_length(targets, number_targets) == 1) {
         printf("Valid file.\n");
     }
     
@@ -124,13 +134,15 @@ void load_target_file(void) {
 }
 
 
-int validate_input(char **targets, int number_targets) {
+
+int validate_length(char **targets, int number_targets) {
 
     int j = 0;
     int length = 0;
     
+    
+    // no more than 15 chars / digits
     for (int i = 0; i<number_targets; i++) {
-        
         j = 0;
         length = 0;
         
@@ -138,7 +150,6 @@ int validate_input(char **targets, int number_targets) {
             length++;
             j++;
         }
-        
         //printf("At %d length = %d\n", i, length);
 
         if(length > 16) {
@@ -151,6 +162,36 @@ int validate_input(char **targets, int number_targets) {
 }
 
 
+
+void add_linked_list(char **targets, int number_targets) {
+    
+    char *single_target[3] = {};                        // array that holds three char pointers
+    
+
+    for (int i = 0; i<number_targets; i+=3) {
+    // fill single_target
+    single_target[0] = targets[i+0];                    // name
+    single_target[1] = targets[i+1];                    // value 1
+    single_target[2] = targets[i+2];                    // value 2
+    
+    // validate the single_target
+    /*if (validate_alphabet(single_target[0]) == 1 &&
+        validate_length(single_target) == 1 &&
+        validate_range(single_target[1], single_target[2]) == 1 &&
+        validate_conflict(single_target) == 1)
+        {
+        
+        // code to add to list
+        
+        }
+    }*/
+    
+    }
+    
+}
+
+
+
 int main(void) {
     
     int option;
@@ -159,6 +200,7 @@ int main(void) {
     option = print_menue();
     printf("Your choice is %d\n", option);
         
+    
     // perform the correct option
     switch (option) {
         case 1:
@@ -169,5 +211,6 @@ int main(void) {
             printf("Not implemented yet.\n");
             break;
     }
+
 
 }
