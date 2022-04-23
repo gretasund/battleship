@@ -5,7 +5,8 @@
 
 int print_menue(void);
 void load_target_file(void);
-int validate_length(char **targets, int number_targets);
+int validate_alphabet(char **single_target);
+int validate_length(char **single_target);
 
 
 int print_menue(void) {
@@ -68,11 +69,8 @@ void load_target_file(void) {
     // scanf("%s", file_name);
     
     
-    // open the file
+    // open the file, display error message if invalid
     fp = fopen(file_name,"r");
-    
-    
-    // display error message if invalid
     if (fp == NULL) {
     printf("Invalid file.\n");
     }
@@ -87,8 +85,7 @@ void load_target_file(void) {
     fread(string, 1, fpsize, fp);           // read the whole file
     fclose(fp);                             // close the file
 
-    string[fpsize] = 0;                     // free string
-    //printf("%s\n", string);
+    string[fpsize] = 0;                     // free string!!!
     
     
     // print the string´s single chars
@@ -109,50 +106,90 @@ void load_target_file(void) {
         j++;
     }
     number_targets = j;
+    printf("numberTargets: %d\n", number_targets);
     
     
     // print the separated string
     printf("Print the separated string:\n");
-    for (int i = 0; i<number_targets+1; i+=3) {
-        printf("targets[%d] =\n", i);
-        printf(" name[%d] = %s\n", i, targets[i]);
-        printf(" value[%d] = %s\n", i, targets[i+1]);
-        printf(" value[%d] = %s\n", i, targets[i+2]);
+    for (int i = 0; i<number_targets; i+=3) {
+        printf("targets[%d] =\n", i/3);
+        printf(" name[%d] = %s\n", i/3, targets[i]);
+        printf(" value[%d] = %s\n", i/3, targets[i+1]);
+        printf(" value[%d] = %s\n", i/3, targets[i+2]);
         printf("\n");
     }
     
     
-    // validate the input
-    if (validate_length(targets, number_targets) == 1) {
-        printf("Valid file.\n");
-    }
+    // validate the target 1
+    for (int i = 0; i<number_targets; i+=3) {
+        char *single_target[3] = {};
+        single_target[0] = targets[i+0];
+        single_target[1] = targets[i+1];
+        single_target[2] = targets[i+2];
     
-    else {
-        printf("Invalid file!\n");
+        if (validate_alphabet(single_target) == 1) {
+            printf("targets[%d] = valid target.\n", i/3);
+        }
+        
+        else {
+            printf("targets[%d] = invalid target.\n", i/3);
+        }
     }
 
 }
 
 
 
-int validate_length(char **targets, int number_targets) {
+int validate_alphabet(char **single_target) {
 
-    int j = 0;
     int length = 0;
     
-    
     // no more than 15 chars / digits
-    for (int i = 0; i<number_targets; i++) {
-        j = 0;
+    for (int i = 0; i<3; i++) {
         length = 0;
         
-        while (targets[i][j] != '\0') {
-            length++;
-            j++;
+        while (single_target[i][length] != '\0') {
+            
+            if (single_target[i][length] == 45 ||         //  - = 45
+                single_target[i][length] == 46 ||         //  . = 46
+                single_target[i][length] >47 && <58 ||    //0-9 = 48-57
+                single_target[i][length] >64 && <91 ||    //A-Z = 65-90
+                single_target[i][length] >96 && <123)     //a-z = 97-122
+            {
+                length++;
+            }
+            
+            else {
+                return 0;
+            }
         }
-        //printf("At %d length = %d\n", i, length);
 
-        if(length > 16) {
+    }
+    
+    return 1;
+    
+}
+
+
+int validate_length(char **single_target) {
+    
+    // for debugging purposes:
+    /*printf("*(single_target) = %s\n", *(single_target));
+    printf("single_target[0] = %s\n", single_target[0]);
+    printf("single_target[1] = %s\n", single_target[1]);*/
+
+    int length = 0;
+    
+    // no more than 15 chars / digits
+    for (int i = 0; i<3; i++) {
+        length = 0;
+        
+        while (single_target[i][length] != '\0') {
+            length++;
+        }
+        // printf("At %d length = %d\n", i, length);
+
+        if(length > 15) {
             return 0;
         }
     }
@@ -175,17 +212,15 @@ void add_linked_list(char **targets, int number_targets) {
     single_target[2] = targets[i+2];                    // value 2
     
     // validate the single_target
-    /*if (validate_alphabet(single_target[0]) == 1 &&
-        validate_length(single_target) == 1 &&
+    if (validate_length(single_target) == 1){
+        /*validate_alphabet(single_target[0]) == 1 &&
         validate_range(single_target[1], single_target[2]) == 1 &&
-        validate_conflict(single_target) == 1)
-        {
+        validate_conflict(single_target) == 1*/
         
         // code to add to list
+        printf("This targets should be added to the list.\n");
         
         }
-    }*/
-    
     }
     
 }
