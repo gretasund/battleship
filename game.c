@@ -150,11 +150,12 @@ int validate_alphabet(char **single_target) {
         
         while (single_target[i][length] != '\0') {
             
-            if (single_target[i][length] == 45 ||         //  - = 45
-                single_target[i][length] == 46 ||         //  . = 46
-                single_target[i][length] >47 && <58 ||    //0-9 = 48-57
-                single_target[i][length] >64 && <91 ||    //A-Z = 65-90
-                single_target[i][length] >96 && <123)     //a-z = 97-122
+            if (
+                (single_target[i][length] >44 && single_target[i][length] <47)    ||    //  - = 45  . = 46
+                (single_target[i][length] >47 && single_target[i][length] <58)    ||    //0-9 = 48-57
+                (single_target[i][length] >64 && single_target[i][length] <91)    ||    //A-Z = 65-90
+                (single_target[i][length] >96 && single_target[i][length] <123)         //a-z = 97-122
+                )
             {
                 length++;
             }
