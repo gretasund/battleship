@@ -7,6 +7,9 @@ int print_menue(void);
 void load_target_file(void);
 int validate_alphabet(char **single_target);
 int validate_length(char **single_target);
+int validate_range(char **single_target);
+int validate_conflict(char **single_target);
+void add_linked_list(char **targets, int number_targets);
 
 
 int print_menue(void) {
@@ -119,22 +122,7 @@ void load_target_file(void) {
         printf("\n");
     }
     
-    
-    // validate the target 1
-    for (int i = 0; i<number_targets; i+=3) {
-        char *single_target[3] = {};
-        single_target[0] = targets[i+0];
-        single_target[1] = targets[i+1];
-        single_target[2] = targets[i+2];
-    
-        if (validate_alphabet(single_target) == 1) {
-            printf("targets[%d] = valid target.\n", i/3);
-        }
-        
-        else {
-            printf("targets[%d] = invalid target.\n", i/3);
-        }
-    }
+    add_linked_list(targets, number_targets);
 
 }
 
@@ -144,17 +132,34 @@ int validate_alphabet(char **single_target) {
 
     int length = 0;
     
-    // no more than 15 chars / digits
-    for (int i = 0; i<3; i++) {
-        length = 0;
+    
+    // validate the name -> single_target[0]
+    while (single_target[0][length] != '\0') {
         
+        if (
+            (single_target[0][length] >47 && single_target[0][length] <58)    ||    //0-9 = 48-57
+            (single_target[0][length] >64 && single_target[0][length] <91)    ||    //A-Z = 65-90
+            (single_target[0][length] >96 && single_target[0][length] <123)         //a-z = 97-122
+            )
+        {
+            length++;
+        }
+        
+        else {
+            // printf("This is the invalid character = length = %c\n", single_target[0][length]);
+            return 0;
+        }
+    }
+    length = 0;
+    
+
+    // validate the values -> single_target[1] and [2]
+    for (int i = 1; i<3; i++) {
         while (single_target[i][length] != '\0') {
             
             if (
-                (single_target[i][length] >44 && single_target[i][length] <47)    ||    //  - = 45  . = 46
-                (single_target[i][length] >47 && single_target[i][length] <58)    ||    //0-9 = 48-57
-                (single_target[i][length] >64 && single_target[i][length] <91)    ||    //A-Z = 65-90
-                (single_target[i][length] >96 && single_target[i][length] <123)         //a-z = 97-122
+                (single_target[i][length] >44 && single_target[i][length] <47) ||    //  - = 45  . = 46
+                (single_target[i][length] >47 && single_target[i][length] <58)       //0-9 = 48-57
                 )
             {
                 length++;
@@ -164,12 +169,14 @@ int validate_alphabet(char **single_target) {
                 return 0;
             }
         }
+        length = 0;
 
     }
     
     return 1;
     
 }
+
 
 
 int validate_length(char **single_target) {
@@ -201,29 +208,95 @@ int validate_length(char **single_target) {
 
 
 
-void add_linked_list(char **targets, int number_targets) {
+int validate_range(char **single_target) {
     
-    char *single_target[3] = {};                        // array that holds three char pointers
+    // declare variables
+    double min = 0;
+    double max = 100;
     
-
-    for (int i = 0; i<number_targets; i+=3) {
-    // fill single_target
-    single_target[0] = targets[i+0];                    // name
-    single_target[1] = targets[i+1];                    // value 1
-    single_target[2] = targets[i+2];                    // value 2
+    // convert the string to double
+    double latitude = 0;
+    sscanf(single_target[1], "%lf", &latitude);
+    printf("latitude %lf\n", latitude);
     
-    // validate the single_target
-    if (validate_length(single_target) == 1){
-        /*validate_alphabet(single_target[0]) == 1 &&
-        validate_range(single_target[1], single_target[2]) == 1 &&
-        validate_conflict(single_target) == 1*/
-        
-        // code to add to list
-        printf("This targets should be added to the list.\n");
-        
-        }
+    double longitude = 0;
+    sscanf(single_target[2], "%lf", &longitude);
+    printf("longitude %lf\n", longitude);
+    
+    
+    // validate range
+    if (latitude < min && latitude >max) {
+        return 0;
     }
     
+    if (longitude < min && longitude >max) {
+        return 0;
+    }
+    
+    return 1;
+    
+}
+
+
+
+int validate_conflict(char **single_target) {
+    
+    return 1;
+    
+}
+
+
+
+void add_linked_list(char **targets, int number_targets) {
+    
+    for (int i = 0; i<number_targets; i+=3) {
+        char *single_target[3] = {};
+        single_target[0] = targets[i+0];
+        single_target[1] = targets[i+1];
+        single_target[2] = targets[i+2];
+        printf("\nsingle_target[%d] = %s %s %s\n", i/3, single_target[0], single_target[1], single_target[2]);
+        
+        
+        // do the checking
+        int a = validate_alphabet(single_target);
+        int l = validate_length(single_target);
+        int r = validate_range(single_target);
+        int c = validate_conflict(single_target);
+        
+        
+        // validate the single_target
+        if (a == 1 && l == 1 && r == 1 && c == 1)
+        {
+            printf("Add.\n");
+        }
+        
+        else {
+            printf("a = %d\nl = %d\nr = %d\nc = %d\n", a, l, r, c);
+            printf("Remove.\n");
+        }
+        
+        
+        //debugging:
+        // check for alphabet
+        /*if (validate_alphabet(single_target) == 1) {
+            printf("A valid = yes.\n");
+        }
+        
+        else {
+            printf("A valid = no.\n");
+        }
+        
+        
+        // check for length
+        if (validate_length(single_target) == 1) {
+            printf("L valid = yes.\n");
+        }
+        
+        else {
+            printf("L valid = no.\n");
+        }*/
+    }
+  
 }
 
 
