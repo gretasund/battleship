@@ -225,11 +225,19 @@ int validate_range(char **single_target) {
     
     
     // validate range
-    if (latitude < min && latitude >max) {
+    if (latitude >= min && latitude <= max) {
+        // printf("Check\n");
+    }
+    
+    else {
         return 0;
     }
     
-    if (longitude < min && longitude >max) {
+    if (longitude >= min && longitude <= max) {
+        // printf("Check\n");
+    }
+    
+    else {
         return 0;
     }
     
@@ -271,7 +279,7 @@ void add_linked_list(char **targets, int number_targets) {
         }
         
         else {
-            printf("a = %d\nl = %d\nr = %d\nc = %d\n", a, l, r, c);
+            //printf("a = %d\nl = %d\nr = %d\nc = %d\n", a, l, r, c);
             printf("Remove.\n");
         }
         
