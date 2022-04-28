@@ -3,13 +3,27 @@
 #include <string.h>
 
 
+
+struct target_list {
+    char *name;
+    double latitude;
+    double longitude;
+    struct target_list *next;
+};
+typedef struct target_list TargetList;
+
+
+
+typedef struct char_list CharList;
 int print_menue(void);
-void load_target_file(void);
+int load_target_file(char **targets);
 int validate_alphabet(char **single_target);
 int validate_length(char **single_target);
 int validate_range(char **single_target);
 int validate_conflict(char **single_target);
-void add_linked_list(char **targets, int number_targets);
+int validate_all_criteria(char *ptrName, char *ptrLatitude, char *ptrLongitude);
+int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude);
+void list_print(TargetList *start);
 
 
 int print_menue(void) {
@@ -24,7 +38,7 @@ int print_menue(void) {
     printf("5) Execute an airstrike\n");
     printf("6) Quit\n");
 
-    while(status == 0){
+    while(status==0){
         
         // get user input
         printf("Please enter a number: ");
@@ -59,23 +73,27 @@ int print_menue(void) {
 
 
 
-void load_target_file(void) {
+int load_target_file(char **targets) {
     
     // declare variables
-    char file_name[30] = "file_invalid.txt";
+    char file_name[30] = {};//"file_valid.txt"
     FILE *fp;
     int number_targets = 0;
     
     
     // get user input
     printf("Enter a target file: \n");
-    // scanf("%s", file_name);
+    scanf("%s", file_name);
     
     
     // open the file, display error message if invalid
     fp = fopen(file_name,"r");
     if (fp == NULL) {
     printf("Invalid file.\n");
+    }
+    
+    else {
+    //printf("Valid file.\n");
     }
     
     
@@ -100,7 +118,6 @@ void load_target_file(void) {
     
     // separate the string
     char *temp = strtok(string, " \t\r\n\f\v");
-    char *targets[30] = {};
     int j = 0;
 
     while(temp != NULL) {
@@ -109,20 +126,19 @@ void load_target_file(void) {
         j++;
     }
     number_targets = j;
-    printf("numberTargets: %d\n", number_targets);
     
     
     // print the separated string
-    printf("Print the separated string:\n");
+    printf("\nPrint the separated string:\n");
     for (int i = 0; i<number_targets; i+=3) {
         printf("targets[%d] =\n", i/3);
-        printf(" name[%d] = %s\n", i/3, targets[i]);
-        printf(" value[%d] = %s\n", i/3, targets[i+1]);
-        printf(" value[%d] = %s\n", i/3, targets[i+2]);
+        printf(" name[%d] = %s\n", i/3, targets[0]);
+        printf("  latitude[%d] = %s\n", i/3, targets[1]);
+        printf(" longitude[%d] = %s\n", i/3, targets[2]);
         printf("\n");
     }
     
-    add_linked_list(targets, number_targets);
+    return number_targets;
 
 }
 
@@ -217,11 +233,11 @@ int validate_range(char **single_target) {
     // convert the string to double
     double latitude = 0;
     sscanf(single_target[1], "%lf", &latitude);
-    printf("latitude %lf\n", latitude);
+    // printf("latitude %lf\n", latitude);
     
     double longitude = 0;
     sscanf(single_target[2], "%lf", &longitude);
-    printf("longitude %lf\n", longitude);
+    // printf("longitude %lf\n", longitude);
     
     
     // validate range
@@ -255,79 +271,141 @@ int validate_conflict(char **single_target) {
 
 
 
-void add_linked_list(char **targets, int number_targets) {
+int validate_all_criteria(char *ptrName, char *ptrLatitude, char *ptrLongitude) {
     
-    for (int i = 0; i<number_targets; i+=3) {
-        char *single_target[3] = {};
-        single_target[0] = targets[i+0];
-        single_target[1] = targets[i+1];
-        single_target[2] = targets[i+2];
-        printf("\nsingle_target[%d] = %s %s %s\n", i/3, single_target[0], single_target[1], single_target[2]);
-        
-        
-        // do the checking
-        int a = validate_alphabet(single_target);
-        int l = validate_length(single_target);
-        int r = validate_range(single_target);
-        int c = validate_conflict(single_target);
-        
-        
-        // validate the single_target
-        if (a == 1 && l == 1 && r == 1 && c == 1)
-        {
-            printf("Add.\n");
-        }
-        
-        else {
-            //printf("a = %d\nl = %d\nr = %d\nc = %d\n", a, l, r, c);
-            printf("Remove.\n");
-        }
-        
-        
-        //debugging:
-        // check for alphabet
-        /*if (validate_alphabet(single_target) == 1) {
-            printf("A valid = yes.\n");
-        }
-        
-        else {
-            printf("A valid = no.\n");
-        }
-        
-        
-        // check for length
-        if (validate_length(single_target) == 1) {
-            printf("L valid = yes.\n");
-        }
-        
-        else {
-            printf("L valid = no.\n");
-        }*/
+    char *single_target[3] = {};
+    single_target[0] = ptrName;
+    single_target[1] = ptrLatitude;
+    single_target[2] = ptrLongitude;
+
+    // check the different validity criteria
+    int a = validate_alphabet(single_target);
+    int l = validate_length(single_target);
+    int r = validate_range(single_target);
+    int c = validate_conflict(single_target);
+    
+    
+    // validate the single_target as a whole
+    if (a == 1 && l == 1 && r == 1 && c == 1) {
+        return 1;
     }
+    
+    else {
+    return 0;
+    }
+
+    return 0;
   
+}
+    
+    
+
+int add_linked_list(TargetList **start, char *ptrName, char *ptrLatitude, char *ptrLongitude) {
+    
+    // Allocate memory
+    TargetList *newTarget = malloc(sizeof(TargetList));
+    
+    // change data type
+    double latitude = 0;
+    double longitude = 0;
+    sscanf(ptrLatitude, "%lf", &latitude);
+    sscanf(ptrLongitude, "%lf", &longitude);
+    
+    // If memory could be allocated
+    if (newTarget != NULL) {
+        
+        // set parameters
+        newTarget->name = ptrName;
+        newTarget->latitude = latitude;
+        newTarget->longitude = longitude;
+        newTarget->next = NULL;
+        
+        // make start of the list
+        if(*start == NULL){
+           *start = newTarget;
+        }
+         
+        // append to the list
+        else {
+           TargetList *cur = *start;
+           while(cur->next != NULL){
+               cur = cur->next;
+           }
+           cur->next = newTarget;
+        }
+        
+        return 1;
+        
+    }
+    
+    else {
+        return 0;
+    }
+
+}
+
+
+
+void list_print(TargetList *start){
+    
+   TargetList *cur = start;
+   while(cur != NULL)
+   {
+       printf("%3s - ", cur->name);
+       printf("%3f - ", cur->latitude);
+       printf("%3f\n", cur->longitude);
+       cur = cur->next;
+   }
+   printf("\n");
 }
 
 
 
 int main(void) {
     
-    int option;
+    int option = 0;
+    char *targets[30] = {};
+    int number_targets = 0;
+    
+    char *ptrName = NULL;
+    char *ptrLatitude = 0;
+    char *ptrLongitude = 0;
+    TargetList *start = NULL;
     
     // user chooses an option
-    option = print_menue();
-    printf("Your choice is %d\n", option);
+    while (option != 6) {
         
-    
-    // perform the correct option
-    switch (option) {
-        case 1:
-            load_target_file();
-            break;
+        option = print_menue();
+        
+        if (option != 6) {
+        printf("Your choice is %d\n", option);
+        }
             
-        default:
-            printf("Not implemented yet.\n");
-            break;
+        
+        // perform the correct option
+        switch (option) {
+            case 1:
+                number_targets = load_target_file(targets);
+                
+                for (int i = 0; i<number_targets; i+=3) {
+                ptrName = targets[i+0];
+                ptrLatitude = targets[i+1];
+                ptrLongitude = targets[i+2];
+                
+                    if(validate_all_criteria(ptrName, ptrLatitude, ptrLongitude) == 1){
+                        add_linked_list(&start, ptrName, ptrLatitude, ptrLongitude);
+                    }
+                }
+                list_print(start);
+                break;
+                
+            case 6:
+                exit(1);
+                
+            default:
+                printf("Not implemented yet.\n");
+                break;
+        }
     }
-
 
 }
